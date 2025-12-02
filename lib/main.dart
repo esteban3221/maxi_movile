@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
+// ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
+import 'package:maxi_movile/providers/progress_provider.dart';
+import 'package:provider/provider.dart';
 import '../controller/api_rest.dart';
 import '../services/database_service.dart';
+
 import 'global.dart';
+import 'menu.dart';
 import 'ip_add.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => ProgressProvider())],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -42,7 +52,7 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       title: 'Maxicajero',
       theme: ThemeData(
-        primarySwatch: Colors.indigo,
+        primarySwatch: Colors.teal,
         brightness: _isDarkMode ? Brightness.dark : Brightness.light,
       ),
       home: MyHomePage(
@@ -160,9 +170,10 @@ class _MyHomePageState extends State<MyHomePage> {
         setState(() {
           GlobalVar().userToken = data['token'] ?? '';
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Inicio de sesión exitoso ${data["usuario"]}'),
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DrawerMenuScreen(user: data['usuario']),
           ),
         );
       },
@@ -180,6 +191,7 @@ class _MyHomePageState extends State<MyHomePage> {
       onProgress: (progress) {
         // Aquí podrías actualizar una barra de progreso si lo deseas
       },
+      context: context,
     );
 
     password = '';
