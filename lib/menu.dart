@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:maxi_movile/menu/ingreso.dart';
 import 'package:provider/provider.dart';
 import 'menu/venta.dart';
+import 'menu/pago.dart';
+import 'menu/movimientos.dart';
 import 'providers/progress_provider.dart';
 
 class DrawerMenuScreen extends StatefulWidget {
@@ -210,10 +212,10 @@ class _DrawerMenuScreenState extends State<DrawerMenuScreen> {
         return VentaPage();
       case 'Ingreso':
         return IngresoPage();
-      // case 'Pago':
-      //   return PagoPage();
-      // case 'Movimientos':
-      //   return MovimientosPage();
+      case 'Pago':
+        return PagosPageCompact();
+      case 'Movimientos':
+        return MovimientosScreen();
       default:
         return defaultPage();
     }
