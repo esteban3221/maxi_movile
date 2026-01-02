@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:maxi_movile/controller/api_rest.dart';
@@ -160,7 +161,9 @@ class _MovimientosScreenState extends State<MovimientosScreen> {
                 ),
               );
             } catch (e) {
-              print('Error al procesar item: $e, item: $item');
+              if (kDebugMode) {
+                print('Error al procesar item: $e, item: $item');
+              }
             }
           }
           _totalRegistros =
@@ -248,14 +251,14 @@ class _MovimientosScreenState extends State<MovimientosScreen> {
                 // Dropdown para tipo
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _selectedTipo,
+                    initialValue: _selectedTipo,
                     decoration: const InputDecoration(
                       labelText: 'Tipo de Movimiento',
                       border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
+                      // contentPadding: EdgeInsets.symmetric(
+                      //   horizontal: 12,
+                      //   vertical: 8,
+                      // ),
                     ),
                     items: _tipos
                         .map(
@@ -320,7 +323,7 @@ class _MovimientosScreenState extends State<MovimientosScreen> {
                 Tooltip(
                   message: 'Aplicar Filtro',
                   child: IconButton(
-                    icon: const Icon(Icons.filter_alt, size: 32),
+                    icon: const Icon(Icons.filter_alt, size: 24),
                     color: Theme.of(context).primaryColor,
                     onPressed: _aplicarFiltro,
                   ),
@@ -332,7 +335,7 @@ class _MovimientosScreenState extends State<MovimientosScreen> {
                 Tooltip(
                   message: 'Eliminar Filtros',
                   child: IconButton(
-                    icon: const Icon(Icons.delete_sweep, size: 32),
+                    icon: const Icon(Icons.delete_sweep, size: 24),
                     color: Colors.red,
                     onPressed: _removerFiltros,
                   ),
@@ -380,7 +383,7 @@ class _MovimientosScreenState extends State<MovimientosScreen> {
                         child: DataTable(
                           columnSpacing: 20,
                           horizontalMargin: 12,
-                          headingRowColor: MaterialStateProperty.resolveWith(
+                          headingRowColor: WidgetStateProperty.resolveWith(
                             (states) =>
                                 Theme.of(context).primaryColor.withOpacity(0.1),
                           ),

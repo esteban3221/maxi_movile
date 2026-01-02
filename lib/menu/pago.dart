@@ -3,7 +3,7 @@ import 'pagoManual.dart';
 import 'pagoAuto.dart';
 
 class PagosPageCompact extends StatefulWidget {
-  const PagosPageCompact({Key? key}) : super(key: key);
+  const PagosPageCompact({super.key});
 
   @override
   _PagosPageCompactState createState() => _PagosPageCompactState();

@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:maxi_movile/global.dart';
+import 'package:maxi_movile/home.dart';
 import 'package:maxi_movile/menu/ingreso.dart';
 import 'package:provider/provider.dart';
 import 'menu/venta.dart';
 import 'menu/pago.dart';
 import 'menu/movimientos.dart';
+import 'menu/ayuda.dart';
+import 'menu/configuracion.dart';
 import 'providers/progress_provider.dart';
 
 class DrawerMenuScreen extends StatefulWidget {
@@ -183,8 +187,14 @@ class _DrawerMenuScreenState extends State<DrawerMenuScreen> {
             icon: Icons.exit_to_app,
             title: 'Cerrar Sesión',
             onTap: () {
-              Navigator.pop(context);
-              // Lógica para cerrar sesión
+              GlobalVar().userToken = '';
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const MyHomePage(title: 'Maxicajero'),
+                ),
+                (route) => false,
+              );
             },
           ),
         ],
@@ -216,6 +226,10 @@ class _DrawerMenuScreenState extends State<DrawerMenuScreen> {
         return PagosPageCompact();
       case 'Movimientos':
         return MovimientosScreen();
+      case 'Ayuda':
+        return HelpScreen();
+      case 'Configuración':
+        return SettingsScreen();
       default:
         return defaultPage();
     }

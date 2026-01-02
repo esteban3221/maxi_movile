@@ -13,7 +13,6 @@ class IpPage extends StatefulWidget {
 
 class _IpPageState extends State<IpPage> {
   final DatabaseService _databaseService = DatabaseService();
-  final GlobalVar global = GlobalVar();
   final TextEditingController _aliasController = TextEditingController();
   final TextEditingController _ipController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
@@ -39,6 +38,7 @@ class _IpPageState extends State<IpPage> {
       }
     } finally {
       setState(() => _isLoading = false);
+      GlobalVar().apiIp = _ipList.isNotEmpty ? _ipList.first.address : '';
     }
   }
 
@@ -61,7 +61,7 @@ class _IpPageState extends State<IpPage> {
     try {
       await _databaseService.insertIp(newIp);
       await _loadIps(); // Recargar lista des
-      global.apiIp = newIp.address;
+      GlobalVar().apiIp = newIp.address;
 
       _aliasController.clear();
       _ipController.clear();
@@ -177,27 +177,51 @@ class _IpPageState extends State<IpPage> {
   }
 
   Widget _buildIpListItem(IpAddress ip, int index) {
+    final isActive = ip.address == GlobalVar().apiIp;
+
     return Card(
+      color: isActive ? Colors.blue.shade50 : null,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: ListTile(
-        leading: CircleAvatar(child: Text('${ip.id ?? index + 1}')),
+        leading: CircleAvatar(
+          backgroundColor: isActive ? Colors.blue : null,
+          child: Text('${ip.id ?? index + 1}'),
+        ),
         title: Text(ip.alias.isEmpty ? 'Sin alias' : ip.alias),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(ip.address, style: const TextStyle(fontFamily: 'Monospace')),
-            if (ip.description != null && ip.description!.isNotEmpty)
-              Text(ip.description!, style: const TextStyle(fontSize: 12)),
-            Text(
-              'ID: ${ip.id}',
-              style: const TextStyle(fontSize: 10, color: Colors.grey),
+            Text(ip.address),
+            if (ip.description!.isNotEmpty)
+              Text(
+                ip.description?.isNotEmpty == true ? ip.description! : '',
+                style: const TextStyle(fontSize: 12),
+              ),
+          ],
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isActive)
+              const Padding(
+                padding: EdgeInsets.only(right: 8),
+                child: Icon(Icons.check_circle, color: Colors.green, size: 20),
+              ),
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red),
+              onPressed: () => _deleteIp(index),
             ),
           ],
         ),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete, color: Colors.red),
-          onPressed: () => _deleteIp(index),
-        ),
+        onTap: () {
+          GlobalVar().apiIp = ip.address;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('IP ${ip.address} seleccionada como activa'),
+            ),
+          );
+          setState(() {}); // para refrescar el UI
+        },
       ),
     );
   }
