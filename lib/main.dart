@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:maxi_movile/global.dart';
 import 'package:maxi_movile/home.dart';
 import 'package:provider/provider.dart';
 import 'providers/theme_provider.dart'; // ← nuevo

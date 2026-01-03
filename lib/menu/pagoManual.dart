@@ -1,4 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:maxi_movile/controller/api_rest.dart';
+import 'package:maxi_movile/global.dart';
+
+import 'package:http/http.dart' as http;
 
 class PagoManualView extends StatefulWidget {
   const PagoManualView({super.key});
@@ -52,7 +57,7 @@ class _PagoManualViewState extends State<PagoManualView> {
                 border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.description, color: Colors.blue),
                 filled: true,
-                fillColor: Colors.grey.shade50,
+                //fillColor: Colors.grey.shade50,
               ),
               maxLines: 3,
               minLines: 1,
@@ -197,7 +202,7 @@ class _PagoManualViewState extends State<PagoManualView> {
           Container(
             width: 140,
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
+              //border: Border.all(color: Colors.grey.shade300),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -246,9 +251,82 @@ class _PagoManualViewState extends State<PagoManualView> {
       );
       return;
     }
+    String data = jsonEncode({
+      'concepto': concepto,
+      'total': _montoAPagar,
+      'bill': _cantidadesBilletes,
+      'coin': _cantidadesMonedas,
+    });
 
-    // Resto de tu código de http.post y mostrar diálogo...
-    // (lo omito aquí para no alargar, pero mantenlo igual)
+    final request = http.post(
+      Uri.parse('${GlobalVar().apiUrl}accion/inicia_pago_manual'),
+      headers: AsyncHttpService.headers,
+      body: data,
+    );
+
+    AsyncHttpService.consumeAndDo<Map<String, dynamic>>(
+      asyncRequest: request,
+
+      context: context,
+
+      onSuccess: (data) {
+        _mostrarDetallesPago(context, data);
+
+        // Limpiar campos
+
+        setState(() {
+          _conceptoController.clear();
+
+          for (int i = 0; i < _cantidadesBilletes.length; i++) {
+            _cantidadesBilletes[i] = 0;
+          }
+
+          for (int i = 0; i < _cantidadesMonedas.length; i++) {
+            _cantidadesMonedas[i] = 0;
+          }
+
+          _montoAPagar = 0;
+        });
+      },
+
+      onError: (error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al registrar pago: $error')),
+        );
+      },
+
+      onProgress: (double p1) {},
+    );
+  }
+
+  void _mostrarDetallesPago(BuildContext context, Map<String, dynamic> data) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Pago Registrada'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Detalles de la venta:'),
+            const SizedBox(height: 10),
+            Text('🆔 ID: ${data['id'] ?? 'N/A'}'),
+            Text('📋 Estatus: ${data['estatus'] ?? 'N/A'}'),
+            Text('💰 Total: \$${data['total'] ?? 'N/A'}'),
+            Text('💰 Ingreso: \$${data['ingreso'] ?? 'N/A'}'),
+            Text('💰 Cambio: \$${data['cambio'] ?? 'N/A'}'),
+            Text('💸 Faltante: \$${data['faltante'] ?? 'N/A'}'),
+            Text('📅 Fecha: ${data['fecha'] ?? 'N/A'}'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

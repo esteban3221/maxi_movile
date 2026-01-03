@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'models/ip_addres.dart';
 import '../services/database_service.dart';
 import 'global.dart';
@@ -23,23 +24,127 @@ class _IpPageState extends State<IpPage> {
   @override
   void initState() {
     super.initState();
-    _loadIps();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (kDebugMode) {
+        print('📞 Llamando _loadIps desde addPostFrameCallback');
+      }
+      await _loadIps();
+    });
   }
 
-  // ✅ CARGAR IPs DES
   Future<void> _loadIps() async {
+    print('🚀 INICIANDO _loadIps()');
     setState(() => _isLoading = true);
+
     try {
+      // 1. Verificar si el servicio de base de datos funciona
+      print('📋 Llamando a _databaseService.getAllIps()...');
       final ips = await _databaseService.getAllIps();
-      setState(() => _ipList = ips);
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error loading IPs: $e');
+
+      // DEPURACIÓN DETALLADA
+      print('✅ IPs obtenidas de BD: ${ips.length}');
+
+      if (ips.isEmpty) {
+        print('❌ LA LISTA DE IPs ESTÁ VACÍA');
+        print('   Revisa:');
+        print('   1. ¿Insertaste IPs en la base de datos?');
+        print('   2. ¿getAllIps() está implementado correctamente?');
+      } else {
+        print('📝 Lista de IPs obtenidas:');
+        for (var i = 0; i < ips.length; i++) {
+          final ip = ips[i];
+          print('   ${i + 1}. address: "${ip.address}"');
+          print('      Tipo: ${ip.runtimeType}');
+          print('      toString(): ${ip.toString()}');
+        }
       }
+
+      String? activeIp;
+
+      // 2. Verificar SharedPreferences
+      print('🔍 Cargando SharedPreferences...');
+      final prefs = await SharedPreferences.getInstance();
+      final savedIp = prefs.getString('active_ip');
+      print('   active_ip en prefs: "$savedIp"');
+
+      if (savedIp != null) {
+        print('   Longitud del string guardado: ${savedIp.length}');
+        print('   ¿Está vacío?: ${savedIp.isEmpty}');
+      }
+
+      // 3. Lógica de selección con más depuración
+      if (ips.isNotEmpty) {
+        print('🎯 Buscando IP activa...');
+
+        if (savedIp != null) {
+          print('   Comparando con IP guardada: "$savedIp"');
+
+          bool encontrada = false;
+          String? ipEncontrada;
+
+          for (var ip in ips) {
+            print('   Comparando: "${ip.address}" == "$savedIp"?');
+            if (ip.address == savedIp) {
+              encontrada = true;
+              ipEncontrada = ip.address;
+              print('   ✓ ¡COINCIDENCIA ENCONTRADA!');
+              break;
+            }
+          }
+
+          if (encontrada) {
+            activeIp = ipEncontrada;
+            print('   Usando IP guardada: $activeIp');
+          } else {
+            print('   ✗ No se encontró la IP guardada en la lista');
+          }
+        } else {
+          print('   No hay IP guardada en prefs');
+        }
+
+        // Si no encontramos IP guardada, usar la última
+        if (activeIp == null) {
+          activeIp = ips.last.address;
+          print('   Usando última IP de la lista: $activeIp');
+
+          // Guardar en prefs
+          print('   Guardando en SharedPreferences...');
+          await prefs.setString('active_ip', activeIp);
+          print('   ✓ Guardado exitoso');
+        }
+
+        // 4. Asignar a GlobalVar
+        print('🌍 Asignando a GlobalVar().apiIp...');
+        GlobalVar().apiIp = activeIp!;
+        print('   GlobalVar().apiIp = "${GlobalVar().apiIp}"');
+      } else {
+        print('⚠️ No hay IPs disponibles');
+        GlobalVar().apiIp = '';
+        print('   GlobalVar().apiIp = "" (vacío)');
+      }
+
+      // 5. Actualizar estado
+      print('🔄 Actualizando _ipList...');
+      setState(() {
+        _ipList = ips;
+      });
+      print('   _ipList actualizada con ${_ipList.length} elementos');
+    } catch (e, stackTrace) {
+      print('❌ ERROR CRÍTICO: $e');
+      print('Stack trace: $stackTrace');
+
+      setState(() {
+        _ipList = [];
+        GlobalVar().apiIp = '';
+      });
     } finally {
+      print('🏁 Finalizando carga...');
       setState(() => _isLoading = false);
-      GlobalVar().apiIp = _ipList.isNotEmpty ? _ipList.first.address : '';
+      print('   _isLoading = false');
     }
+
+    print('✨ _loadIps() COMPLETADO');
+    print('────────────────────────────');
   }
 
   // ✅ AGREGAR IP A BD
@@ -180,7 +285,6 @@ class _IpPageState extends State<IpPage> {
     final isActive = ip.address == GlobalVar().apiIp;
 
     return Card(
-      color: isActive ? Colors.blue.shade50 : null,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: ListTile(
         leading: CircleAvatar(
@@ -213,14 +317,14 @@ class _IpPageState extends State<IpPage> {
             ),
           ],
         ),
-        onTap: () {
+        onTap: () async {
           GlobalVar().apiIp = ip.address;
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('active_ip', ip.address);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('IP ${ip.address} seleccionada como activa'),
-            ),
+            SnackBar(content: Text('IP ${ip.address} seleccionada y guardada')),
           );
-          setState(() {}); // para refrescar el UI
+          setState(() {});
         },
       ),
     );

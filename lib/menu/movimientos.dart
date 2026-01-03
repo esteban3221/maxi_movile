@@ -80,7 +80,8 @@ class _MovimientosScreenState extends State<MovimientosScreen> {
 
   Future<void> _cargarDatos() async {
     // Preparar el cuerpo JSON eliminando los valores null
-    final Map<String, dynamic> requestBody = {'pag': 1};
+    int pagina = 1;
+    final Map<String, dynamic> requestBody = {'pag': pagina};
 
     // Solo agregar tipo si no es "Todo"
     if (_selectedTipo != "Todo") {
@@ -116,6 +117,7 @@ class _MovimientosScreenState extends State<MovimientosScreen> {
     } else {
       requestBody['f_fin'] = '';
     }
+    requestBody['pag'] = pagina == 1 ? 0 : pagina - 100;
 
     print('Enviando JSON: ${json.encode(requestBody)}'); // Para debug
 

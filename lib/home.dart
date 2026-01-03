@@ -6,6 +6,7 @@ import 'package:maxi_movile/menu.dart';
 import 'package:http/http.dart' as http;
 import 'package:maxi_movile/providers/theme_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -146,7 +147,39 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  void _onBtnIniciarPressed() {
+  Future<void> _onBtnIniciarPressed() async {
+    if (GlobalVar().apiIp.isEmpty) {
+      final prefs = await SharedPreferences.getInstance();
+      final savedIp = prefs.getString('active_ip');
+
+      if (savedIp != null && savedIp.isNotEmpty) {
+        GlobalVar().apiIp = savedIp;
+        print('🔄 IP recuperada: $savedIp');
+        setState(() {});
+      } else {
+        // No hay IP, ir a configurar
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Debes configurar una IP primero'),
+            action: SnackBarAction(
+              label: 'Configurar',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const IpPage()),
+                ).then((_) {
+                  // Cuando regresa de IpPage, intentar login de nuevo
+                  if (GlobalVar().apiIp.isNotEmpty) {
+                    _onBtnIniciarPressed();
+                  }
+                });
+              },
+            ),
+          ),
+        );
+        return;
+      }
+    }
     final password = _passwordController.text.trim();
     if (password.isEmpty) {
       ScaffoldMessenger.of(
